@@ -1,19 +1,23 @@
 // src/components/ResponsiveShell.tsx
 export default function ResponsiveShell({ left, center, right, footer }: any) {
   return (
-    <div className="min-h-screen grid grid-rows-[1fr_auto]">
-      <main className="grid gap-3 p-3 
-                       grid-cols-1 
-                       md:grid-cols-2 
-                       xl:grid-cols-3">
-        <section className="order-1">{left}</section>
-        <section className="order-2">{center}</section>
-        <section className="order-3 xl:block hidden">{right}</section>
+    <div className="min-h-[100dvh] grid grid-rows-[1fr_auto] bg-white">
+      {/* コンテンツ部分は縦並び＋余白 */}
+      <main className="p-3 space-y-6">
+        <section>{left}</section>
+        <section>{center}</section>
+        <section>{right}</section>
       </main>
-      <nav className="sticky bottom-0 w-full border-t bg-white/90 backdrop-blur p-2
-                      grid grid-cols-3 gap-2">
-        {footer}
+
+      {/* フッターは固定で下に */}
+      <nav className="sticky bottom-0 w-full border-t bg-white/90 backdrop-blur p-2">
+        <div className="grid grid-cols-3 gap-2">
+          {footer}
+        </div>
+        {/* iPhone下部の安全領域（ホームバー部分）対応 */}
+        <div className="pb-[env(safe-area-inset-bottom)]" />
       </nav>
     </div>
   );
 }
+

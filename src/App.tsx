@@ -1,5 +1,7 @@
 // src/App.tsx
 import React, { useMemo, useState, useEffect } from "react";
+import { ScenarioTabsWrap } from "./components/ScenarioTabsWrap";
+
 
 /**
  * Poker Range Trainer - all-in-one

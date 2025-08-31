@@ -62,7 +62,24 @@ button:focus-visible {
   a:hover {
     color: #747bff;
   }
-  button {
-    background-color: #f9f9f9;
-  }
+button {
+  background-color: #f9f9f9;
 }
+
+/* 横スクロール禁止の基本 */
+html, body, #root { 
+  max-width: 100%; 
+  overflow-x: hidden; 
+}
+
+/* 画像・表がはみ出さない */
+img, table { 
+  max-width: 100%; 
+  height: auto; 
+}
+
+/* 横並びを強制していた要素のデフォルトをリセット */
+.nowrap, .whitespace-nowrap { 
+  white-space: normal !important; 
+}
+
