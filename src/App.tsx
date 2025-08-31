@@ -1,7 +1,7 @@
 // src/App.tsx
 import React, { useMemo, useState, useEffect } from "react";
+import ResponsiveShell from "./ResponsiveShell";
 import { ScenarioTabsWrap } from "./components/ScenarioTabsWrap";
-
 
 /**
  * Poker Range Trainer - all-in-one
@@ -409,205 +409,20 @@ export default function App() {
     else setBoard(board.filter((_, i) => i !== idx));
   }
 
-  return (
-    <div style={{fontFamily:"ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial", padding:16, background:"#f6f7f8", minHeight:"100vh"}}>
-      <div style={{ maxWidth: 1150, margin: "0 auto" }}>
-        <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8, color:"#111827" }}>Poker Range Trainer</h1>
+  // ---- UI：縦スク前提レイアウト --------------------------------
 
-        {/* Preset / Scenario */}
-        <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
-          <div style={cardBox}>
-            <div style={labelMuted}>Preset (Scenario × Position)</div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-              <label>Scenario:&nbsp;
-                <select value={scenario} onChange={(e) => setScenario(e.target.value as Scenario)} style={selectStyle}>
-                  <option value="OPEN">OPEN</option>
-                  <option value="BBvsOPEN">BB vs OPEN（コール）</option>
-                  <option value="SB_3BET">SB 3bet</option>
-                  <option value="BB_3BET">BB 3bet</option>
-                  <option value="BB_SB_CALL_3BET">BB/SB 3betにコール</option>
-                  <option value="BTN_3BET">BTN 3bet</option>
-                </select>
-              </label>
+  // シナリオタブ（Scenario 型に合わせてIDは大文字）
+  const scenarioTabs = [
+    { id: "OPEN", label: "オープン" },
+    { id: "BBvsOPEN", label: "BBコール" },
+    { id: "SB_3BET", label: "SB 3bet" },
+    { id: "BB_3BET", label: "BB 3bet" },
+    { id: "BB_SB_CALL_3BET", label: "3betにコール(BB/SB)" },
+    { id: "BTN_3BET", label: "BTN 3bet" },
+  ] as const;
 
-              <label>Position:&nbsp;
-                <select value={pos} onChange={(e) => setPos(e.target.value as ThreePos)} style={selectStyle}>
-                  {VALID_POS[scenario].map((p) => <option key={p} value={p}>{p}</option>)}
-                </select>
-              </label>
-
-              <button style={btn} onClick={() => { const txt = getPresetText(scenario, pos); if (txt) applyPreset(txt); }}>
-                Apply
-              </button>
-              <button style={btn} onClick={() => setRange(new Set())}>Clear</button>
-            </div>
-
-            {/* 任意レンジを貼り付け */}
-            <div style={{ marginTop: 8 }}>
-              <div style={{ ...labelMuted, marginBottom: 4 }}>Paste Range (例: <code>22+,A2s+,KTo+,T9s-87s</code>)</div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <input
-                  value={custom}
-                  onChange={(e) => setCustom(e.target.value)}
-                  placeholder="22+, A2s+, KTo+, T9s-87s ..."
-                  style={{ ...inputStyle, flex: 1 }}
-                />
-                <button style={btn} onClick={() => { if (custom.trim()) applyPreset(custom); }}>
-                  Apply Text
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <CardSelector title="Hero" cards={hero} max={2} used={used} onAdd={(c) => addCard("hero", c)} onRemove={(i) => removeCard("hero", i)} />
-          <CardSelector title="Board" cards={board} max={5} used={used} onAdd={(c) => addCard("board", c)} onRemove={(i) => removeCard("board", i)} />
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 16 }}>
-          <div>
-            <h3 style={{ fontWeight: 700, margin: "6px 0", color:"#111827" }}>Range Grid</h3>
-            <Grid range={range} toggle={toggleCell} remaining={remainingPerLabel} />
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <div style={cardBox}>
-              <div style={labelMuted}>Summary</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 6 }}>
-                <Stat label="Remaining Combos" value={String(totalCombos)} />
-                <Stat label="Selected Hands" value={String(range.size)} />
-              </div>
-            </div>
-
-            <div style={cardBox}>
-              <div style={{ fontWeight: 600, marginBottom: 8 }}>
-                Made Hand Breakdown {board.length >= 3 ? "(on current board)" : "(needs flop)"}
-              </div>
-              <ul style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, fontSize: 14, margin: 0, padding: 0, listStyle: "none" }}>
-                {(["Straight Flush","Quads","Full House","Flush","Straight","Trips","Two Pair","Pair","High Card"] as Category[]).map((k) => (
-                  <li key={k} style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span>{k}</span>
-                    <span style={{ fontVariantNumeric: "tabular-nums", color:"#111827" }}>
-                      {agg.catCounts[k]} / {categoryPercents[k].toFixed(1)}%
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div style={cardBox}>
-              <div style={{ fontWeight: 600, marginBottom: 8 }}>
-                Draw Breakdown {board.length >= 3 ? "(current board)" : "(needs flop)"}
-              </div>
-              <ul style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, fontSize: 14, margin: 0, padding: 0, listStyle: "none" }}>
-                <li style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Flush Draw</span>
-                  <span style={{ fontVariantNumeric: "tabular-nums", color:"#111827" }}>{agg.drawCounts.FD} / {drawPercents.FD.toFixed(1)}%</span>
-                </li>
-                <li style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>OESD</span>
-                  <span style={{ fontVariantNumeric: "tabular-nums", color:"#111827" }}>{agg.drawCounts.OESD} / {drawPercents.OESD.toFixed(1)}%</span>
-                </li>
-                <li style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Gutshot</span>
-                  <span style={{ fontVariantNumeric: "tabular-nums", color:"#111827" }}>{agg.drawCounts.Gutshot} / {drawPercents.Gutshot.toFixed(1)}%</span>
-                </li>
-                <li style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Backdoor FD</span>
-                  <span style={{ fontVariantNumeric: "tabular-nums", color:"#111827" }}>{agg.drawCounts.BDFD} / {drawPercents.BDFD.toFixed(1)}%</span>
-                </li>
-              </ul>
-            </div>
-
-            <div style={cardBox}>
-              <div style={{ fontWeight: 600, marginBottom: 6 }}>Combo Details</div>
-              <div style={{ maxHeight: 260, overflow: "auto", fontSize: 14, display: "grid", gridTemplateColumns: "1fr auto", rowGap: 4, columnGap: 8 }}>
-                {Array.from(range).sort((a, b) => handSort(a) - handSort(b)).map((lab) => (
-                  <React.Fragment key={lab}>
-                    <span>{lab}</span>
-                    <span style={{ fontVariantNumeric: "tabular-nums" }}>{remainingPerLabel[lab] ?? 0}</span>
-                  </React.Fragment>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ color: "#6b7280", fontSize: 12, marginTop: 8 }}>
-          Tip: マスをクリックでON/OFF。上三角=Suited / 下三角=Offsuit。Hero/Boardにカードを入れるとブロッカーで自動減算します。
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ===================== UI Parts ===================== */
-const cardBox: React.CSSProperties = {
-  background: "#fff",
-  border: "1px solid #e5e7eb",
-  borderRadius: 14,
-  padding: 12,
-  boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-  color: "#111827",
-};
-const labelMuted: React.CSSProperties = { color: "#6b7280", fontSize: 12, marginBottom: 4 };
-const selectStyle: React.CSSProperties = {
-  padding: "8px 10px",
-  border: "1px solid #d1d5db",
-  borderRadius: 10,
-  background: "#fff",
-  color: "#111827",
-};
-const inputStyle: React.CSSProperties = {
-  padding: "8px 10px",
-  border: "1px solid #d1d5db",
-  borderRadius: 10,
-  background: "#fff",
-  color: "#111827",
-};
-const btn: React.CSSProperties = {
-  padding: "6px 10px",
-  border: "1px solid #d1d5db",
-  borderRadius: 10,
-  background: "#fff",
-  color: "#111827",
-  cursor: "pointer",
-};
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 10, background: "#fff" }}>
-      <div style={{ color: "#6b7280", fontSize: 12 }}>{label}</div>
-      <div
-        style={{
-          fontSize: 18,
-          fontWeight: 700,
-          fontVariantNumeric: "tabular-nums",
-          color: "#111827", // 文字色を強制（テーマで白化するのを防ぐ）
-        }}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function Grid({
-  range,
-  toggle,
-  remaining,
-}: {
-  range: Set<string>;
-  toggle: (l: string) => void;
-  remaining: Record<string, number>;
-}) {
-  const cellBG = (i: number, j: number, on: boolean) => {
-    const pair = on ? "#FDE68A" : "#FEF3C7";    // amber 300/200
-    const suited = on ? "#BFDBFE" : "#DBEAFE";  // blue 300/200（上三角）
-    const offsuit = on ? "#A7F3D0" : "#D1FAE5"; // emerald 300/200（下三角）
-    if (i === j) return pair; if (j > i) return suited; return offsuit;
-  };
-
-  return (
+  // 簡易レンジ表（見た目のみ）
+  const RangeGrid = () => (
     <div style={{ display: "inline-block", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, padding: 6, boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
       <table style={{ borderCollapse: "collapse" }}>
         <tbody>
@@ -615,23 +430,25 @@ function Grid({
             <tr key={i}>
               {row.map((lab, j) => {
                 const on = range.has(lab);
-                const rem = remaining[lab] ?? (lab.length === 2 ? 6 : lab[2] === "s" ? 4 : 12);
+                const rem = remainingPerLabel[lab] ?? (lab.length === 2 ? 6 : lab[2] === "s" ? 4 : 12);
+                const pair = on ? "#FDE68A" : "#FEF3C7";    // amber 300/200
+                const suited = on ? "#BFDBFE" : "#DBEAFE";  // blue 300/200
+                const offsuit = on ? "#A7F3D0" : "#D1FAE5"; // emerald 300/200
+                const bg = i === j ? pair : (j > i ? suited : offsuit);
+
                 return (
                   <td key={j} style={{ padding: 0 }}>
                     <button
-                      onClick={() => toggle(lab)}
+                      onClick={() => toggleCell(lab)}
                       title={`${lab} (残り${rem}コンボ)`}
                       style={{
                         width: 36, height: 36,
-                        background: cellBG(i, j, on),
+                        background: bg,
                         border: on ? "2px solid #3b82f6" : "1px solid #d1d5db",
                         opacity: on ? 1 : 0.7,
                         transform: on ? "scale(1.02)" : "none",
                         transition: "all 120ms ease",
-                        fontSize: 11,
-                        fontWeight: 700,
-                        lineHeight: 1,
-                        color: "#111827",
+                        fontSize: 11, fontWeight: 700, lineHeight: 1, color: "#111827",
                       }}
                     >
                       <div>{lab}</div>
@@ -646,6 +463,176 @@ function Grid({
       </table>
     </div>
   );
+
+  return (
+    <ResponsiveShell
+      left={
+        <>
+          <h1 className="text-xl font-bold mb-2">シナリオ</h1>
+          <ScenarioTabsWrap
+            items={scenarioTabs as unknown as { id: string; label: string }[]}
+            value={scenario as unknown as string}
+            onChange={(id) => setScenario(id as Scenario)}
+          />
+
+          {/* Position 選択 & プリセット適用 */}
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {VALID_POS[scenario].map((p) => (
+              <button
+                key={p}
+                onClick={() => setPos(p)}
+                className={
+                  "h-10 rounded-xl border " +
+                  (p === pos ? "border-gray-900 font-semibold" : "border-gray-300")
+                }
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-3 flex gap-2">
+            <button
+              className="h-10 rounded-xl border px-3"
+              onClick={() => {
+                const txt = getPresetText(scenario, pos);
+                if (txt) applyPreset(txt);
+              }}
+            >
+              プリセット適用
+            </button>
+            <button className="h-10 rounded-xl border px-3" onClick={() => setRange(new Set())}>
+              クリア
+            </button>
+          </div>
+
+          {/* 任意レンジ貼り付け */}
+          <div className="mt-4">
+            <div className="text-xs text-gray-500 mb-1">
+              Paste Range (例: <code>22+,A2s+,KTo+,T9s-87s</code>)
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={custom}
+                onChange={(e) => setCustom(e.target.value)}
+                placeholder="22+, A2s+, KTo+, T9s-87s ..."
+                className="flex-1 px-3 py-2 border rounded-lg"
+              />
+              <button
+                className="h-10 rounded-xl border px-3"
+                onClick={() => { if (custom.trim()) applyPreset(custom); }}
+              >
+                適用
+              </button>
+            </div>
+          </div>
+
+          {/* カード選択 */}
+          <div className="mt-4 grid gap-3">
+            <CardSelector title="Hero" cards={hero} max={2} used={used} onAdd={(c) => addCard("hero", c)} onRemove={(i) => removeCard("hero", i)} />
+            <CardSelector title="Board" cards={board} max={5} used={used} onAdd={(c) => addCard("board", c)} onRemove={(i) => removeCard("board", i)} />
+          </div>
+        </>
+      }
+
+      center={
+        <>
+          <h2 className="text-lg font-semibold mb-2">レンジ</h2>
+          <RangeGrid />
+
+          {/* Summary */}
+          <div className="grid grid-cols-2 gap-2 my-4">
+            <Stat label="Remaining Combos" value={String(totalCombos)} />
+            <Stat label="Selected Hands" value={String(range.size)} />
+          </div>
+
+          {/* Hand Breakdown */}
+          <div className="p-3 border rounded-xl bg-white">
+            <div className="font-semibold mb-2">
+              Made Hand Breakdown {board.length >= 3 ? "(on current board)" : "(needs flop)"}
+            </div>
+            <ul className="grid grid-cols-2 gap-1 text-sm m-0 p-0 list-none">
+              {(["Straight Flush","Quads","Full House","Flush","Straight","Trips","Two Pair","Pair","High Card"] as Category[]).map((k) => (
+                <li key={k} className="flex justify-between">
+                  <span>{k}</span>
+                  <span className="text-gray-900" style={{ fontVariantNumeric: "tabular-nums" }}>
+                    {agg.catCounts[k]} / {categoryPercents[k].toFixed(1)}%
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Draw Breakdown */}
+          <div className="p-3 border rounded-xl bg-white mt-3">
+            <div className="font-semibold mb-2">
+              Draw Breakdown {board.length >= 3 ? "(current board)" : "(needs flop)"}
+            </div>
+            <ul className="grid grid-cols-2 gap-1 text-sm m-0 p-0 list-none">
+              <li className="flex justify-between">
+                <span>Flush Draw</span>
+                <span className="text-gray-900" style={{ fontVariantNumeric: "tabular-nums" }}>{agg.drawCounts.FD} / {drawPercents.FD.toFixed(1)}%</span>
+              </li>
+              <li className="flex justify-between">
+                <span>OESD</span>
+                <span className="text-gray-900" style={{ fontVariantNumeric: "tabular-nums" }}>{agg.drawCounts.OESD} / {drawPercents.OESD.toFixed(1)}%</span>
+              </li>
+              <li className="flex justify-between">
+                <span>Gutshot</span>
+                <span className="text-gray-900" style={{ fontVariantNumeric: "tabular-nums" }}>{agg.drawCounts.Gutshot} / {drawPercents.Gutshot.toFixed(1)}%</span>
+              </li>
+              <li className="flex justify-between">
+                <span>Backdoor FD</span>
+                <span className="text-gray-900" style={{ fontVariantNumeric: "tabular-nums" }}>{agg.drawCounts.BDFD} / {drawPercents.BDFD.toFixed(1)}%</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Combo Details */}
+          <div className="p-3 border rounded-xl bg-white mt-3">
+            <div className="font-semibold mb-2">Combo Details</div>
+            <div className="max-h-64 overflow-auto grid grid-cols-[1fr_auto] gap-x-2 gap-y-1 text-sm">
+              {Array.from(range).sort((a, b) => handSort(a) - handSort(b)).map((lab) => (
+                <React.Fragment key={lab}>
+                  <span>{lab}</span>
+                  <span style={{ fontVariantNumeric: "tabular-nums" }}>{remainingPerLabel[lab] ?? 0}</span>
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        </>
+      }
+
+      right={<div />}
+
+      footer={
+        <>
+          <button className="h-11 rounded-xl border">フィルタ</button>
+          <button className="h-11 rounded-xl border">シナリオ</button>
+          <button className="h-11 rounded-xl border">判定</button>
+        </>
+      }
+    />
+  );
+}
+
+/* ===================== UI Parts ===================== */
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border rounded-xl p-3 bg-white">
+      <div className="text-xs text-gray-500">{label}</div>
+      <div
+        style={{
+          fontSize: 18,
+          fontWeight: 700,
+          fontVariantNumeric: "tabular-nums",
+          color: "#111827",
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  );
 }
 
 function CardSelector({
@@ -655,29 +642,25 @@ function CardSelector({
 }) {
   const disabled = cards.length >= max;
   return (
-    <div style={{ ...cardBox, padding: "4px 6px" }}>
-      <div style={{ ...labelMuted, fontSize: 13, marginBottom: 4 }}>{title} Cards ({cards.length}/{max})</div>
+    <div className="p-2 border rounded-xl bg-white">
+      <div className="text-sm text-gray-600 mb-1">
+        {title} Cards ({cards.length}/{max})
+      </div>
 
       {/* 選択済みカード */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 6, flexWrap: "wrap" }}>
+      <div className="flex gap-1 mb-2 flex-wrap">
         {cards.map((c, i) => (
-          <span key={i} style={{
-            display: "inline-flex", alignItems: "center", gap: 4,
-            padding: "3px 6px", border: "1px solid #e5e7eb",
-            borderRadius: 999, background: "#f3f4f6", fontSize: 12
-          }}>
+          <span key={i} className="inline-flex items-center gap-1 px-2 py-1 border rounded-full bg-gray-100 text-sm">
             <SmallCard card={c} w={26} />
-            <button onClick={() => onRemove(i)} style={{
-              color: "#dc2626", fontWeight: 700, cursor: "pointer", fontSize: 12, lineHeight: 1
-            }}>×</button>
+            <button onClick={() => onRemove(i)} className="text-red-600 font-bold">×</button>
           </span>
         ))}
       </div>
 
       {/* 4行×13列 */}
-      <div style={{ display:"grid", gridTemplateRows:"repeat(4, auto)", rowGap: 4, maxHeight: 170, overflow: "auto" }}>
+      <div className="grid" style={{ gridTemplateRows:"repeat(4, auto)", rowGap: 4, maxHeight: 170, overflow: "auto" }}>
         {(["c","d","h","s"] as const).map((suit) => (
-          <div key={suit} style={{ display:"grid", gridTemplateColumns:"repeat(13, 1fr)", columnGap: 4 }}>
+          <div key={suit} className="grid" style={{ gridTemplateColumns:"repeat(13, 1fr)", columnGap: 4 }}>
             {RANKS.map((r) => {
               const card = r + suit;
               const isUsed = used.has(card) || disabled;
@@ -687,14 +670,8 @@ function CardSelector({
                   onClick={() => !isUsed && onAdd(card)}
                   disabled={isUsed}
                   title={card.toUpperCase()}
-                  style={{
-                    cursor: isUsed ? "not-allowed" : "pointer",
-                    opacity: isUsed ? 0.35 : 1,
-                    border: "1px solid #e5e7eb",
-                    borderRadius: 6,
-                    background: "#fff",
-                    padding: 1,
-                  }}
+                  className="border rounded bg-white p-0.5"
+                  style={{ cursor: isUsed ? "not-allowed" : "pointer", opacity: isUsed ? 0.35 : 1 }}
                 >
                   <SmallCard card={card} w={26} />
                 </button>
@@ -706,7 +683,6 @@ function CardSelector({
     </div>
   );
 }
-
 
 function SmallCard({ card, w = 26 }: { card: string; w?: number }) {
   const r = card[0]; const s = card[1];
@@ -733,11 +709,9 @@ function SmallCard({ card, w = 26 }: { card: string; w?: number }) {
   );
 }
 
-
 function handSort(lab: string) {
   if (lab.length === 2) return -(RANK_ORDER[lab[0]] * 100 + 50);
   const a = lab[0], b = lab[1];
   const base = RANK_ORDER[a] * 100 + RANK_ORDER[b];
   return -(base + (lab[2] === "s" ? 10 : 0));
 }
-
