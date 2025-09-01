@@ -40,8 +40,11 @@ for (let i = 0; i < 13; i++) {
 
 /* ===================== Presets ===================== */
 type Pos = "BTN" | "CO" | "HJ" | "LJ";
-type ThreePos = Pos | "SB" | "BB";
+type ThreePos = Pos | "SB" | "BB" | "EP";
 type Scenario = "OPEN" | "BBvsOPEN" | "SB_3BET" | "BB_3BET" | "BB_SB_CALL_3BET" | "BTN_3BET";
+type VsOpenPos = Pos | "SB";
+type Sb3betPos = "BTN" | "EP";
+type BbSbCall3betPos = "BTN" | "EP";
 
 // ユーザー提供のプリセット（整形済み）
 const PRESETS = {
@@ -50,35 +53,31 @@ const PRESETS = {
     CO:  "22+, A2s+, K5s+, Q7s+, J8s+, T8s+, 97s+, 86s+, 75s+, 64s+, 53s+, 98s, 87s, 76s,65s, 54s, 43s, 32s, A2o+, K8o+, Q9o+, J9o+, T9o+, 98o, 87o, 76o, 65o",
     HJ:  "22+, A2s+, K7s+, Q8s+, J8s+, T8s+, 97s+, 86s+, 75s+, 64s+, 53s+, 98s, 87s, 76s,65s, 54s, 43s, A8o+, KTo+, QTo+, JTo+",
     LJ:  "22+, A2s+, K7s+, Q8s+, J8s+, T8s+, 97s+, 86s+, 75s+, 64s+, 53s+,  98s, 87s, 76s,65s, 54s, 43s, AJo+, KQo",
-  } as Record<Pos, string>,
+    SB:  "22+, A2s+, K2s+, Q2s+, J6s+, T6s+, 96s+, 86s+, 75s+, 65s+, A2o+, K7o+, Q8o+, J8o+, T8o+, 98o",
+  } as Record<Pos | "SB", string>,
 
   bbCallVs: {
+    SB:  "22-99, A2s-A9s, K2s-K9s, Q2s-QTs, J2s-JTs, T2s-T9s, 87s,76s,65s,KTo,Qto,K8o,Q8o,J8o,97s, 98s, 86s, 75s, 64s, 54s, 43s, 32s, A2o-A9o, K9o,KJo, KQo, Q9o, QJo, J9o, JTo, T9o ",
     BTN: "22, 33, 44, 55, 66, A6s, A7s, A8s, K2s, K3s, K4s, K5s, K6s, K7s, K8s, K9s, Q2s, Q3s, Q4s, Q5s, Q6s, Q7s, Q8s, Q9s, J5s, J6s, J7s, J8s, J9s, T5s, T6s, T7s, T8s, 96s, 97s, 98s, 85s, 86s, 87s, 74s, 75s, 76s, 65s, 64s, 53s, 54s, 43s, ATo, A9o, A8o, A7o, A6o, A5o, A4o, A3o, K9o, KTo, KJo, KQo, Q9o, QTo, JTo, J9o",
-    CO:  "72o",
+    CO:  "22, 33, 44, 55, 66, 77, 88, 99,A2s, A3s, A4s, A5s, A6s, A7s, A8s, A9s,K7s, K8s, K9s,Q8s, Q9s, QTs,J8s, J9s, JTs,T8s, T9s,97s, 98s,86s,75s,64s,54s,A9o, ATo,KJo, KQo,QJo,JTo,87s,76s,65s",
     HJ:  "22, 33, 44, 55, 66, 77, 88, 99, 54s, 65s, 78s, 89s, 98s, T9s, JTs, A2s, K2s, A3s, K3s, A4s, K4s, Q4s, A5s, K5s, Q5s, A6s, K6s, Q6s, A7s, K7s, Q7s, J6s+, T7s+, 97s, 87s, K8s, 75s+, 76s,  KJo, AJo, ATo, KTo, KQo, QJo, QTo, JTo",
     LJ:  "72o",
-  } as Record<Pos, string>,
+  } as Record<VsOpenPos, string>,
 
   sb3bet: {
     BTN: "66+, A7s+, A5s, A4s, A3s, K9s+, Q9s+, J9s+, T8s+, 89s, ATo+, KJo+",
-    CO:  "88+, A9s+, A5s, A4s, K9s+, QTs+, J9s+, T9s+, AJo+, KQo+",
-    HJ:  "77+, A8s+, KJs+,QTs, J9s, A2s, A3s, A4s, A5s, QJs, AQo+, JTs",
-    LJ:  "QQ+, AQs+, AKo",
-  } as Record<Pos, string>,
+    EP:  "99+,A3s,A4s,A5s,ATs+,KTs+,QTs+,AQo+,KQo,",
+  } as Record<Sb3betPos, string>,
 
   bb3bet: {
-    BTN: "77+, AJs+, KTs+, Q9s+, J9s, T8s, 87s,76s, 98s, JTs, A9s+, A5s, A4s, A3s, A2s, T9s, AQo+",
-    CO:  "TT+",
-    HJ:  "JJ+, AKo, ATs+, KTs+, QTs+, JTs, T9s,",
-    LJ:  "QQ+, AQs+, AKo",
-  } as Record<Pos, string>,
+    BTN: "77+, ATs+, KTs+, Q9s+, J9s, T8s, 87s,76s, 98s, JTs, A9s+, A5s, A4s, A3s, A2s, T9s, A7o+,KTo+,QTo+",
+    EP:  "77+,AKo, AQo, KQo, ATo+,KTo+, KQo,A2s-A5s, AJs+, KTs+, QTs+, JTs",
+  } as Record<"BTN" | "EP", string>,
 
   bbsbCall3bet: {
-    BTN: "66, 77, 88, 99, TT, JJ, A2s, A3s, A4s, A5s, A6s, A7s, A8s, A9s, ATs, AJs, AQs, K9s, KTs, KJs, KQs, QJs, QTs, JTs, J9s, T8s+, 89s, 87s, 76s, 65s, 54s",
-    CO:  "72o",
-    HJ:  "22, 33, 44, 55, 66, 77, 88, 99, TT, JJ, QQ, A2s, A3s, A4s, A5s, A6s, A7s, A8s, A9s, ATs, AJs, AQs, KTs, KJs, KQs, QJs, QTs, JTs, T9s, 89s, 87s, 76s, 65s, 54s",
-    LJ:  "99, AQs, KQs",
-  } as Record<Pos, string>,
+    BTN: "55,66, 77, 88, 99, TT, JJ, A2s, A3s, A4s, A5s, A6s, A7s, A8s, A9s, ATs, AJs, AQs, K9s, KTs, KJs, KQs, QJs, QTs, JTs, J9s, T8s+, 89s, 87s, 76s, 65s, 54s",
+    EP:  "55-QQ,ATs,AJs,AQs,KTs,KJs,KQs,JTs,54s,65s,76s,87s,QJs,QTs,98s,T9s",
+  } as Record<BbSbCall3betPos, string>,
 
   btn3bet: {
     BTN: "72s",
@@ -89,11 +88,11 @@ const PRESETS = {
 };
 
 const VALID_POS: Record<Scenario, ThreePos[]> = {
-  OPEN: ["BTN", "CO", "HJ", "LJ"],
-  BBvsOPEN: ["BTN", "CO", "HJ", "LJ"],
-  SB_3BET: ["BTN", "CO", "HJ", "LJ"],
-  BB_3BET: ["BTN", "CO", "HJ", "LJ"],
-  BB_SB_CALL_3BET: ["BTN", "CO", "HJ", "LJ"],
+  OPEN: ["SB","BTN", "CO", "HJ", "LJ"],
+  BBvsOPEN: ["SB","BTN", "CO", "HJ", "LJ"],
+  SB_3BET: ["BTN", "EP"],
+  BB_3BET: ["BTN", "EP"],
+  BB_SB_CALL_3BET: ["BTN", "EP"],
   BTN_3BET: ["CO", "HJ", "LJ", "SB", "BB"],
 };
 
@@ -144,16 +143,69 @@ function expandDiagonalRange(from: string, to: string): string[] {
 }
 function expandToken(tok: string): string[] {
   if (!tok) return [];
-  if (/^([2-9TJQKA])\1\+$/.test(tok)) return expandPairPlus(tok[0] + tok[1]); // 22+
-  if (/^([2-9TJQKA])\1$/.test(tok)) return [tok];                              // 22
-  let m = tok.match(/^([2-9TJQKA])([2-9TJQKA])([so])\+$/i);                    // A2s+ / KTo+
-  if (m) { const [, x, y, so] = m as any; return expandSuitedOffPlus(x, y, so.toLowerCase() as "s" | "o"); }
-  m = tok.match(/^([2-9TJQKA])([2-9TJQKA])([so])$/i);                          // AJs / KQo
-  if (m) { const [, x, y, so] = m as any; const [hi, lo] = sortHiLo(x, y); return [`${hi}${lo}${so.toLowerCase()}`]; }
-  m = tok.match(/^([2-9TJQKA]{2}[so])-([2-9TJQKA]{2}[so])$/i);                 // T9s-87s
-  if (m) { const [, from, to] = m; return expandDiagonalRange(from.toUpperCase(), to.toUpperCase()); }
+
+  // 22+（ペアの+）
+  if (/^([2-9TJQKA])\1\+$/.test(tok)) {
+    return expandPairPlus(tok[0] + tok[1]);
+  }
+
+  // 22（単体ペア）
+  if (/^([2-9TJQKA])\1$/.test(tok)) {
+    return [tok];
+  }
+
+  // 22-99 / 55-JJ など（ペアの範囲）
+  let m = tok.match(/^([2-9TJQKA])\1-([2-9TJQKA])\2$/);
+  if (m) {
+    const [, from, to] = m;
+    const out: string[] = [];
+    const start = idx(from);
+    const end = idx(to);
+    for (let i = start; i >= end; i--) {
+      out.push(RANKS[i] + RANKS[i]); // 22,33,...,99
+    }
+    return out;
+  }
+
+  // ★ A2s-A9s / KTo-KQo など（1枚目とs/oが同じで、2枚目だけ範囲）
+  m = tok.match(/^([2-9TJQKA])([2-9TJQKA])([so])-\1([2-9TJQKA])\3$/i);
+  if (m) {
+    const [, first, from, so, to] = m;
+    const out: string[] = [];
+    const start = idx(from.toUpperCase());
+    const end = idx(to.toUpperCase());
+    for (let i = start; i >= end; i--) {
+      out.push(`${first.toUpperCase()}${RANKS[i]}${so.toLowerCase()}`); // A2s..A9s 等
+    }
+    return out;
+  }
+
+  // A2s+ / KTo+（スーテッド/オフスートの+）
+  m = tok.match(/^([2-9TJQKA])([2-9TJQKA])([so])\+$/i);
+  if (m) {
+    const [, x, y, so] = m as any;
+    return expandSuitedOffPlus(x, y, so.toLowerCase() as "s" | "o");
+  }
+
+  // AJs / KQo（スーテッド/オフスート単体）
+  m = tok.match(/^([2-9TJQKA])([2-9TJQKA])([so])$/i);
+  if (m) {
+    const [, x, y, so] = m as any;
+    const [hi, lo] = sortHiLo(x, y);
+    return [`${hi}${lo}${so.toLowerCase()}`];
+  }
+
+  // T9s-87s など（斜めの範囲）
+  m = tok.match(/^([2-9TJQKA]{2}[so])-([2-9TJQKA]{2}[so])$/i);
+  if (m) {
+    const [, from, to] = m;
+    return expandDiagonalRange(from.toUpperCase(), to.toUpperCase());
+  }
+
   return [];
 }
+
+
 function parseRangeString(raw: string): string[] {
   const norm = normalizeRange(raw);
   const parts = norm.split(",").filter(Boolean);
@@ -369,27 +421,36 @@ export default function App() {
     return out;
   }, [agg]);
 
-  const drawPercents = useMemo(() => {
-    const sum = Object.values(agg.drawCounts).reduce((a, b) => a + b, 0) || 1;
-    return {
-      FD: (agg.drawCounts.FD / sum) * 100,
-      OESD: (agg.drawCounts.OESD / sum) * 100,
-      Gutshot: (agg.drawCounts.Gutshot / sum) * 100,
-      BDFD: (agg.drawCounts.BDFD / sum) * 100,
-    };
-  }, [agg]);
+const drawPercents = useMemo(() => {
+  const denom = agg.totalCombos || 1; // Remaining Combos を分母に
+  return {
+    FD: (agg.drawCounts.FD / denom) * 100,
+    OESD: (agg.drawCounts.OESD / denom) * 100,
+    Gutshot: (agg.drawCounts.Gutshot / denom) * 100,
+    BDFD: (agg.drawCounts.BDFD / denom) * 100,
+  };
+}, [agg]);
 
-  function getPresetText(sc: Scenario, p: ThreePos): string | null {
-    switch (sc) {
-      case "OPEN": return PRESETS.open[p as Pos] ?? null;
-      case "BBvsOPEN": return PRESETS.bbCallVs[p as Pos] ?? null;
-      case "SB_3BET": return PRESETS.sb3bet[p as Pos] ?? null;
-      case "BB_3BET": return PRESETS.bb3bet[p as Pos] ?? null;
-      case "BB_SB_CALL_3BET": return PRESETS.bbsbCall3bet[p as Pos] ?? null;
-      case "BTN_3BET": return PRESETS.btn3bet[p as Pos] ?? null;
-      default: return null;
-    }
+
+function getPresetText(sc: Scenario, p: ThreePos): string | null {
+  switch (sc) {
+    case "OPEN":
+      return PRESETS.open[p as Pos] ?? null;
+    case "BBvsOPEN":
+      return PRESETS.bbCallVs[p as VsOpenPos] ?? null;
+    case "SB_3BET":
+      return PRESETS.sb3bet[p as Sb3betPos] ?? null;
+    case "BB_3BET":
+      return PRESETS.bb3bet[p as "BTN" | "EP"] ?? null;
+    case "BB_SB_CALL_3BET": 
+      return PRESETS.bbsbCall3bet[p as BbSbCall3betPos] ?? null;
+    case "BTN_3BET":
+      return PRESETS.btn3bet[p as Pos] ?? null;
+    default:
+      return null;
   }
+}
+
 
   function applyPreset(txt: string) {
     const labs = parseRangeString(txt);
