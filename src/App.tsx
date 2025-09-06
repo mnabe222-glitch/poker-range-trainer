@@ -538,34 +538,45 @@ function getPresetText(sc: Scenario, p: ThreePos): string | null {
 
           {/* Position 選択 & プリセット適用 */}
           <div className="mt-4 grid grid-cols-3 gap-2">
-            {VALID_POS[scenario].map((p) => (
-              <button
-                key={p}
-                onClick={() => setPos(p)}
-                className={
-                  "h-10 rounded-xl border " +
-                  (p === pos ? "border-gray-900 font-semibold" : "border-gray-300")
-                }
-              >
-                {p}
-              </button>
-            ))}
-          </div>
+  {VALID_POS[scenario].map((p) => {
+    const active = p === pos;
+    return (
+      <button
+        key={p}
+        onClick={() => setPos(p)}
+        aria-pressed={active}
+        className={[
+          "h-10 rounded-xl border px-3 text-sm transition",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
+          active
+            ? "bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-300"
+            : "bg-white text-gray-800 border-gray-300 hover:bg-gray-50 active:scale-[0.98]"
+        ].join(" ")}
+      >
+        {p}
+      </button>
+    );
+  })}
+</div>
 
-          <div className="mt-3 flex gap-2">
-            <button
-              className="h-10 rounded-xl border px-3"
-              onClick={() => {
-                const txt = getPresetText(scenario, pos);
-                if (txt) applyPreset(txt);
-              }}
-            >
-              プリセット適用
-            </button>
-            <button className="h-10 rounded-xl border px-3" onClick={() => setRange(new Set())}>
-              クリア
-            </button>
-          </div>
+<div className="mt-3 flex gap-2">
+  <button
+    className="h-10 rounded-xl border px-3 bg-blue-600 text-white border-blue-600 hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+    onClick={() => {
+      const txt = getPresetText(scenario, pos);
+      if (txt) applyPreset(txt);
+    }}
+  >
+    プリセット適用
+  </button>
+  <button
+    className="h-10 rounded-xl border px-3 bg-white text-gray-800 border-gray-300 hover:bg-gray-50 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+    onClick={() => setRange(new Set())}
+  >
+    クリア
+  </button>
+</div>
+
 
           {/* 任意レンジ貼り付け */}
           <div className="mt-4">
