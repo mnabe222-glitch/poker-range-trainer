@@ -318,6 +318,17 @@ function bestCategory(hole: string[], board: string[]): Category {
 }
 function conflicts(card: string, used: Set<string>) { return used.has(card); }
 
+// suited ラベルのコンボが「点灯中のスート」に含まれるか（offsuit & pair は常に許可）
+function suitedAllowedByFilter(lab: string, combo: string[], active: Set<string>): boolean {
+  if (lab.length === 3 && lab[2] === "s") {
+    // comboは ["Ah","4h"] のように同スート。1枚目のスートでOK
+    const suit = combo[0][1] as "c"|"d"|"h"|"s";
+    return active.has(suit);
+  }
+  return true; // ペア＆オフスートはフィルタ無効
+}
+
+
 // --- Draw helpers ---
 const RANK_TO_NUM: Record<string, number> = { "2":2,"3":3,"4":4,"5":5,"6":6,"7":7,"8":8,"9":9,"T":10,"J":11,"Q":12,"K":13,"A":14 };
 function straightPresence(cards: string[]) {
@@ -362,6 +373,19 @@ export default function App() {
   const [hero, setHero] = useState<string[]>([]);
   const [board, setBoard] = useState<string[]>([]);
   const [custom, setCustom] = useState<string>("");
+  // ★ suited の集計用スートフィルタ（複数選択可）
+const [activeSuits, setActiveSuits] = useState<Set<string>>(
+  new Set(["c","d","h","s"])
+);
+
+function toggleSuit(suit: "c" | "d" | "h" | "s") {
+  setActiveSuits(prev => {
+    const n = new Set(prev);
+    if (n.has(suit)) n.delete(suit); else n.add(suit);
+    return n;
+  });
+}
+
 
   // シナリオ変更で pos を自動補正
   useEffect(() => {
@@ -376,50 +400,70 @@ export default function App() {
     const m: Record<string, number> = {};
     for (const lab of range) {
       let cnt = 0;
-      for (const c of LABEL_TO_COMBOS[lab])
+      for (const c of LABEL_TO_COMBOS[lab]) {
+        if (!suitedAllowedByFilter(lab, c, activeSuits)) continue; // ★ 追加
         if (!conflicts(c[0], used) && !conflicts(c[1], used)) cnt++;
+      }
       m[lab] = cnt;
     }
     return m;
-  }, [range, used]);
+  }, [range, used, activeSuits]); // ★ 依存に activeSuits を追加
+  
 
   /* ---- ALL-IN-ONE 集計：合計コンボ数 + 役/ドローの件数 ---- */
-  type DrawKey = "FD" | "OESD" | "Gutshot" | "BDFD";
-  const agg = useMemo(() => {
-    const catCounts: Record<Category, number> = {
-      "High Card": 0, Pair: 0, "Two Pair": 0, Trips: 0,
-      Straight: 0, Flush: 0, "Full House": 0, Quads: 0, "Straight Flush": 0,
-    };
-    const drawCounts: Record<DrawKey, number> = { FD: 0, OESD: 0, Gutshot: 0, BDFD: 0 };
-    let total = 0;
+// どこか上のほうで一度だけ宣言（まだ無ければ）
+type DrawKey = "FD" | "OESD" | "Gutshot" | "BDFD";
 
-    for (const lab of range) {
-      for (const c of LABEL_TO_COMBOS[lab]) {
-        if (conflicts(c[0], used) || conflicts(c[1], used)) continue;
-        total++;
+const agg = useMemo(() => {
+  const catCounts: Record<Category, number> = {
+    "High Card": 0, Pair: 0, "Two Pair": 0, Trips: 0,
+    Straight: 0, Flush: 0, "Full House": 0, Quads: 0, "Straight Flush": 0,
+  };
 
-        if (board.length >= 3) {
-          const cards = [...c, ...board];
-          const cat = bestCategory(c, board);
-          catCounts[cat]++;
-          if (hasFlushDraw(cards)) drawCounts.FD++;
-          if (hasOESD(cards)) drawCounts.OESD++;
-          if (hasGutshot(cards)) drawCounts.Gutshot++;
-          if (hasBackdoorFlushDraw(cards, board.length)) drawCounts.BDFD++;
-        }
+  // ★ ここで定義（外側は消す）
+  const drawCounts: Record<DrawKey, number> = {
+    FD: 0, OESD: 0, Gutshot: 0, BDFD: 0
+  };
+
+  let total = 0;
+
+  for (const lab of range) {
+    for (const c of LABEL_TO_COMBOS[lab]) {
+      if (!suitedAllowedByFilter(lab, c, activeSuits)) continue; // スートフィルタ
+      if (conflicts(c[0], used) || conflicts(c[1], used)) continue;
+
+      total++;
+
+      if (board.length >= 3) {
+        const cards = [...c, ...board];
+        const cat = bestCategory(c, board);
+        catCounts[cat]++;
+        if (hasFlushDraw(cards)) drawCounts.FD++;
+        if (hasOESD(cards))    drawCounts.OESD++;
+        if (hasGutshot(cards)) drawCounts.Gutshot++;
+        if (hasBackdoorFlushDraw(cards, board.length)) drawCounts.BDFD++;
       }
     }
-    return { totalCombos: total, catCounts, drawCounts };
-  }, [range, used, board]);
+  }
 
+  return { totalCombos: total, catCounts, drawCounts };
+}, [range, used, board, activeSuits]); // activeSuits を依存に含める
+
+
+  
   const totalCombos = agg.totalCombos;
+  // 集計済みの役カウントから割合（%）を作る
+const categoryPercents = useMemo(() => {
+  const sum = Object.values(agg.catCounts).reduce((a, b) => a + b, 0) || 1;
+  // out の型は Category をキーにした number
+  const out: Record<Category, number> = { ...agg.catCounts } as Record<Category, number>;
+  (Object.keys(out) as Category[]).forEach(k => {
+    out[k] = (agg.catCounts[k] / sum) * 100;
+  });
+  return out;
+}, [agg]);
 
-  const categoryPercents = useMemo(() => {
-    const sum = Object.values(agg.catCounts).reduce((a, b) => a + b, 0) || 1;
-    const out: Record<Category, number> = { ...agg.catCounts } as any;
-    (Object.keys(out) as Category[]).forEach(k => (out[k] = (agg.catCounts[k] / sum) * 100));
-    return out;
-  }, [agg]);
+
 
 const drawPercents = useMemo(() => {
   const denom = agg.totalCombos || 1; // Remaining Combos を分母に
@@ -481,6 +525,39 @@ function getPresetText(sc: Scenario, p: ThreePos): string | null {
     { id: "BB_SB_CALL_3BET", label: "3betにコール(BB/SB)" },
     { id: "BTN_3BET", label: "BTN 3bet" },
   ] as const;
+
+{/* ---- Suit Filter (suited only) ---- */}
+<div className="flex items-center gap-2 mb-2">
+  <span className="text-xs text-gray-500 mr-1">Suited filter:</span>
+  {(["c","d","h","s"] as const).map(s => (
+    <button
+      key={s}
+      onClick={() => toggleSuit(s)}
+      className={[
+        "px-3 py-1 rounded-lg border text-base font-semibold transition",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
+        activeSuits.has(s)
+          ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+      ].join(" ")}
+      title={
+        s==="c" ? "♣ clubs" :
+        s==="d" ? "♦ diamonds" :
+        s==="h" ? "♥ hearts" : "♠ spades"
+      }
+    >
+      {SUIT_GLYPH[s]}
+    </button>
+  ))}
+  <button
+    onClick={() => setActiveSuits(new Set(["c","d","h","s"]))}
+    className="ml-2 px-2 py-1 rounded-md text-xs border bg-white hover:bg-gray-50"
+    title="全スートON"
+  >
+    reset
+  </button>
+</div>
+
 
   // 簡易レンジ表（見た目のみ）
   const RangeGrid = () => (
