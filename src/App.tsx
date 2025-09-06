@@ -654,6 +654,57 @@ function getPresetText(sc: Scenario, p: ThreePos): string | null {
   </button>
 </div>
 
+{/* --- スートフィルタ（♣♦♥♠） -------------------------------------- */}
+<div className="mt-4">
+  <div className="mb-1 text-sm text-gray-500">Suited 集計に含めるスート</div>
+
+  <div className="flex items-center gap-2">
+    {(['c','d','h','s'] as const).map((s) => {
+      const on = activeSuits.has(s);
+      const glyph = { c:'♣', d:'♦', h:'♥', s:'♠' }[s];
+      const color = { c:'text-gray-900', d:'text-red-600', h:'text-red-600', s:'text-gray-900' }[s];
+
+      return (
+        <button
+          key={s}
+          onClick={() => toggleSuit(s)}
+          aria-pressed={on}
+          title={`${glyph} を${on ? '除外' : '含める'}`}
+          className={[
+            'w-10 h-10 rounded-full border transition flex items-center justify-center text-xl',
+            on
+              ? 'bg-yellow-200 border-yellow-500 shadow-inner'
+              : 'bg-white border-gray-300 hover:bg-gray-50'
+          ].join(' ')}
+        >
+          <span className={color}>{glyph}</span>
+        </button>
+      );
+    })}
+
+    {/* すべてON / すべてOFF ショートカット */}
+    <button
+      onClick={() => setActiveSuits(new Set(['c','d','h','s']))}
+      className="ml-2 h-10 px-3 rounded-xl border bg-white hover:bg-gray-50 text-sm"
+      title="すべてオン"
+    >
+      すべて
+    </button>
+    <button
+      onClick={() => setActiveSuits(new Set())}
+      className="h-10 px-3 rounded-xl border bg-white hover:bg-gray-50 text-sm"
+      title="すべてオフ"
+    >
+      なし
+    </button>
+  </div>
+</div>
+
+{/* レンジ表 */}
+<h2 className="mt-5 text-lg font-semibold">レンジ</h2>
+<RangeGrid />
+
+
 
           {/* 任意レンジ貼り付け */}
           <div className="mt-4">
